@@ -1,0 +1,77 @@
+# Task 1: Clone the project repository
+# Assuming you have already cloned the repository, navigate to the project folder
+
+# Task 2: Create an emotion detection application using Watson NLP library
+from ibm_watson import NaturalLanguageUnderstandingV1
+from ibm_watson.natural_language_understanding_v1 import Features, EmotionOptions
+from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+import json
+
+# Authentication
+API_KEY = "your_ibm_api_key"
+URL = "your_ibm_service_url"
+
+authenticator = IAMAuthenticator(API_KEY)
+nlu = NaturalLanguageUnderstandingV1(
+    version='2021-08-01',
+    authenticator=authenticator
+)
+nlu.set_service_url(URL)
+
+def emotion_detector(text):
+    if not isinstance(text, str) or not text.strip():
+        return {"error": "Input text must be a non-empty string", "status": 400}
+    try:
+        response = nlu.analyze(
+            text=text,
+            features=Features(emotion=EmotionOptions()),
+            language='en'
+        ).get_result()
+        emotions = response.get('emotion', {}).get('document', {}).get('emotion', {})
+        if not emotions:
+            return {"error": "No emotion detected", "status": 204}
+        return {"emotions": emotions, "status": 200}
+    except Exception as e:
+        return {"error": str(e), "status": 500}
+
+# Task 3: Format the output properly
+# The emotion_detector function returns a structured dictionary
+
+# Task 4: Package the application
+# Create a folder structure:
+# - emotion_detection/
+#   - __init__.py
+#   - detector.py (contains emotion_detector function)
+
+# Task 5: Unit tests
+import unittest
+class TestEmotionDetection(unittest.TestCase):
+    def test_emotion_detection(self):
+        self.assertEqual(emotion_detector("I am happy")['status'], 200)
+        self.assertEqual(emotion_detector("")['status'], 400)
+        self.assertEqual(emotion_detector(None)['status'], 400)
+        self.assertEqual(emotion_detector(123)['status'], 400)
+
+if __name__ == "__main__":
+    unittest.main()
+
+# Task 6: Web deployment using Flask
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    try:
+        data = request.get_json()
+        text = data.get("text", "")
+        return jsonify(emotion_detector(text))
+    except Exception as e:
+        return jsonify({"error": "Invalid input format", "status": 400})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+# Task 7: Error Handling Implemented in emotion_detector
+# Task 8: Static code analysis
+# Run pylint on server.py and ensure a perfect 10/10 score
